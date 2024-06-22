@@ -1,0 +1,44 @@
+<?xml version="1.0" ?>
+
+<gprconfig>
+  <configuration>
+   <config><![CDATA[
+   package Compiler is
+      Common_Required_Switches :=
+         ("-march=rv32imac_zicsr", "-mabi=ilp32");
+
+      for Leading_Required_Switches ("Ada") use
+         Compiler'Leading_Required_Switches ("Ada") &
+         Common_Required_Switches;
+      for Leading_Required_Switches ("C") use
+         Compiler'Leading_Required_Switches ("C") &
+         Common_Required_Switches;
+     for Leading_Required_Switches ("Asm") use
+         Compiler'Leading_Required_Switches ("Asm") &
+         Common_Required_Switches;
+      for Leading_Required_Switches ("Asm2") use
+         Compiler'Leading_Required_Switches ("Asm2") &
+         Common_Required_Switches;
+      for Leading_Required_Switches ("Asm_Cpp") use
+         Compiler'Leading_Required_Switches ("Asm_Cpp") &
+         Common_Required_Switches;
+   end Compiler;
+
+   package Linker is
+      for Required_Switches use Linker'Required_Switches &
+        ("${RUNTIME_DIR(ada)}/adalib/libgnat.a") &
+        Compiler.Common_Required_Switches &
+        ("-nostdlib", "-lm", "-lgcc", "-lc");
+
+      for Required_Switches use Linker'Required_Switches &
+	("-T", "${RUNTIME_DIR(ada)}/adalib/due-flash.ld");
+   end Linker;
+
+   package Binder is
+      for Required_Switches ("Ada") use Binder'Required_Switches ("Ada")
+        & ("-nostdlib");
+        end Binder;
+]]>
+   </config>
+  </configuration>
+</gprconfig>
