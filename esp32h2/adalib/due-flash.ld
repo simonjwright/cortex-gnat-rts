@@ -29,7 +29,7 @@
  */
 
 /* Entry Point */
-ENTRY(program_initialization)
+ENTRY(program_entry)
 
 /* Force linking of syscalls.o. The reason this is needed is that the
    symbols in it are only referenced later on in the linking order

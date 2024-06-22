@@ -18,7 +18,7 @@
 --  program; see the files COPYING3 and COPYING.RUNTIME respectively.
 --  If not, see <http://www.gnu.org/licenses/>.
 
-with Interfaces;
+with Interfaces.C;
 with System.Machine_Code;
 with System.Parameters;
 with System.Storage_Elements;
@@ -29,14 +29,18 @@ with System.FreeRTOS.Tasks;
 
 package body Startup is
 
-   --  Program_Initialization is the program entry point.
-   procedure Program_Initialization
+   --  Program_Entry is the program entry point.
+   procedure Program_Entry
    with
      Export,
      Convention => Ada,
-     External_Name => "program_initialization",
+     External_Name => "program_entry",
      No_Return;
-   pragma Machine_Attribute (Program_Initialization, "naked");
+   pragma Machine_Attribute (Program_Entry, "naked");
+
+   pragma Warnings (Off, "not referenced");
+   procedure Program_Initialization;
+   pragma Warnings (On, "not referenced");
 
    --  If the link includes a symbol _default_initial_stack,
    --  use this as the storage size: otherwise, use 1024.
@@ -44,10 +48,10 @@ package body Startup is
    --  Used in Set_Up_Heap, but declared here because the argument for
    --  pragma "Weak_External" must be a library-level entity.
    Default_Initial_Stack : constant System.Parameters.Size_Type
-   with
-     Import,
-     Convention => Ada,
-     External_Name => "_default_initial_stack";
+     with
+       Import,
+       Convention => Ada,
+       External_Name => "_default_initial_stack";
    pragma Weak_External (Default_Initial_Stack);
 
    procedure Set_Up_Heap;
@@ -57,6 +61,29 @@ package body Startup is
    procedure Set_Up_Clock;
    --  Separate to reduce the complexity of this file.
    procedure Set_Up_Clock is separate;
+
+   procedure Program_Entry is
+   begin
+      --  This is called at program entry, before the stack pointer is
+      --  set up, which is why it's 'naked'. We can't call any
+      --  subprograms until some assembly-level initialization has
+      --  been done, in particilar the stack pointer.
+
+      --  See, for example, https://five-embeddev.com/baremetal/startup_c/.
+
+      System.Machine_Code.Asm
+        (
+         ".option push;" & ASCII.LF &
+           ".option norelax;" & ASCII.LF &
+           "la    gp, __global_pointer$;" & ASCII.LF &
+           ".option pop;" & ASCII.LF &
+           "la    sp, _estack;" & ASCII.LF &
+           "jal   zero, _startup__program_initialization"
+         ,
+         --  no input, output, or clobbers
+         Volatile => True);
+
+   end Program_Entry;
 
    procedure Program_Initialization is
       --  The following symbols are set up in the linker script:
@@ -72,8 +99,8 @@ package body Startup is
 
       use System.Storage_Elements;
 
-      ISR_Vector : Storage_Element
-        with Import, Convention => Asm, External_Name => "_isr_vector";
+      --  ISR_Vector : Storage_Element
+      --    with Import, Convention => Asm, External_Name => "_isr_vector";
       Sdata : Storage_Element
         with Import, Convention => Asm, External_Name => "_sdata";
       Edata : Storage_Element
@@ -86,22 +113,45 @@ package body Startup is
       Data_Size : constant Storage_Offset := Edata'Address - Sdata'Address;
 
       --  Index from 1 so as to avoid subtracting 1 from the size
-      Data_In_Flash : constant Storage_Array (1 .. Data_Size)
+      subtype Data_Storage_Array is Storage_Array (1 .. Data_Size);
+
+      Data_In_Flash : Data_Storage_Array
         with Import, Convention => Asm, External_Name => "_sidata";
 
-      Data_In_Sram : Storage_Array (1 .. Data_Size)
-      with Volatile, Import, Convention => Asm, External_Name => "_sdata";
+      Data_In_Sram : Data_Storage_Array
+        with Import, Convention => Asm, External_Name => "_sdata";
 
       Bss_Size : constant Storage_Offset := Ebss'Address - Sbss'Address;
 
-      Bss : Storage_Array (1 .. Bss_Size)
-        with Volatile, Import, Convention => Ada, External_Name => "_sbss";
+      subtype Bss_Storage_Array is Storage_Array (1 .. Bss_Size);
 
+      Bss : Bss_Storage_Array
+        with Import, Convention => Ada, External_Name => "_sbss";
+
+      procedure memcpy (Dst : Data_Storage_Array;
+                        Src : Data_Storage_Array;
+                        N   : Interfaces.C.size_t)
+      with Import,
+        Convention    => C,
+        External_Name => "_memcpy";
+
+      procedure memset (B   : Bss_Storage_Array;
+                        C   : Interfaces.C.unsigned_char;
+                        Len : Interfaces.C.size_t)
+      with Import,
+        Convention => C,
+        External_Name => "_memset";
    begin
+
       --  Copy data to SRAM
-      Data_In_Sram := Data_In_Flash;
+      memcpy (Dst => Data_In_Sram,
+              Src => Data_In_Flash,
+              N   => Data_In_Flash'Length);
+
       --  Initialize BSS in SRAM
-      Bss := (others => 0);
+      memset (B   => Bss,
+              C   => 0,
+              Len => Bss'Length);
 
       Set_Up_Heap;
       Set_Up_Clock;

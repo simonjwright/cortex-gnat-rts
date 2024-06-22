@@ -102,6 +102,10 @@ library project Build_Runtime is
       for Switches ("a-tags.adb") use ALL_ADAFLAGS & ("-g");
       for Switches ("last_chance_handler.c") use ALL_CFLAGS & ("-g", "-O0");
       for Switches ("s-harhan.adb") use ALL_ADAFLAGS & ("-g", "-O0");
+
+      --  This is a workround for
+      --  esp32_h2-rng.ads:9:06: warning: unit "System" is not referenced
+      for Switches ("esp32_h2-rng.ads") use ALL_ADAFLAGS & "-gnatwn";
   end Compiler;
 
    package Install is
