@@ -22,7 +22,6 @@
 --  See Atmel-11057C-ATARM-SAM3X-SAM3A-Datasheet_23-Mar-15, Table 9.1.
 
 package Ada.Interrupts.Names is
-   pragma Pure;
 
    SUPC_IRQ       : constant := 0;  --  Supply Controller
    RSTC_IRQ       : constant := 1;  --  Reset Controller

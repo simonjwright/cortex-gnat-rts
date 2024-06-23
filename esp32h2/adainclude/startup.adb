@@ -30,6 +30,7 @@ with System.FreeRTOS.Tasks;
 package body Startup is
 
    --  Program_Entry is the program entry point.
+   pragma Warnings (Off, """Program_Entry"" is marked as No_Return");
    procedure Program_Entry
    with
      Export,
@@ -37,30 +38,6 @@ package body Startup is
      External_Name => "program_entry",
      No_Return;
    pragma Machine_Attribute (Program_Entry, "naked");
-
-   pragma Warnings (Off, "not referenced");
-   procedure Program_Initialization;
-   pragma Warnings (On, "not referenced");
-
-   --  If the link includes a symbol _default_initial_stack,
-   --  use this as the storage size: otherwise, use 1024.
-   --
-   --  Used in Set_Up_Heap, but declared here because the argument for
-   --  pragma "Weak_External" must be a library-level entity.
-   Default_Initial_Stack : constant System.Parameters.Size_Type
-     with
-       Import,
-       Convention => Ada,
-       External_Name => "_default_initial_stack";
-   pragma Weak_External (Default_Initial_Stack);
-
-   procedure Set_Up_Heap;
-   --  Separate to reduce the complexity of this file.
-   procedure Set_Up_Heap is separate;
-
-   procedure Set_Up_Clock;
-   --  Separate to reduce the complexity of this file.
-   procedure Set_Up_Clock is separate;
 
    procedure Program_Entry is
    begin
@@ -84,6 +61,44 @@ package body Startup is
          Volatile => True);
 
    end Program_Entry;
+
+   pragma Warnings (Off, "not referenced");
+   pragma Warnings (Off, """Program_Initialization"" is marked as No_Return");
+   procedure Program_Initialization
+   with No_Return;
+   pragma Warnings (On, "not referenced");
+
+   --  Used in Program_Initialization to copy rw data from flash to sram.
+   --  Modelled after memcpy().
+   --  Needed because of GCC PR 115591.
+   procedure Copy (Dst : out System.Storage_Elements.Storage_Array;
+                   Src :     System.Storage_Elements.Storage_Array);
+
+   --  Used in Program_Initialization to initialise bss.
+   --  Modelled after memset().
+   --  Needed because of GCC PR 115591.
+   procedure Set (Dst : out System.Storage_Elements.Storage_Array;
+                  To  :     System.Storage_Elements.Storage_Element);
+
+   procedure Set_Up_Heap;
+   --  If the link includes a symbol _default_initial_stack,
+   --  use this as the storage size: otherwise, use 1024.
+   --
+   --  Used in Set_Up_Heap, but declared here because the argument for
+   --  pragma "Weak_External" must be a library-level entity.
+   Default_Initial_Stack : constant System.Parameters.Size_Type
+     with
+       Import,
+       Convention => Ada,
+       External_Name => "_default_initial_stack";
+   pragma Weak_External (Default_Initial_Stack);
+
+   --  Separate to reduce the complexity of this file.
+   procedure Set_Up_Heap is separate;
+
+   procedure Set_Up_Clock;
+   --  Separate to reduce the complexity of this file.
+   procedure Set_Up_Clock is separate;
 
    procedure Program_Initialization is
       --  The following symbols are set up in the linker script:
@@ -128,30 +143,15 @@ package body Startup is
       Bss : Bss_Storage_Array
         with Import, Convention => Ada, External_Name => "_sbss";
 
-      procedure memcpy (Dst : Data_Storage_Array;
-                        Src : Data_Storage_Array;
-                        N   : Interfaces.C.size_t)
-      with Import,
-        Convention    => C,
-        External_Name => "_memcpy";
-
-      procedure memset (B   : Bss_Storage_Array;
-                        C   : Interfaces.C.unsigned_char;
-                        Len : Interfaces.C.size_t)
-      with Import,
-        Convention => C,
-        External_Name => "_memset";
    begin
 
       --  Copy data to SRAM
-      memcpy (Dst => Data_In_Sram,
-              Src => Data_In_Flash,
-              N   => Data_In_Flash'Length);
+      Copy (Src => Data_In_Flash,
+            Dst => Data_In_Sram);
 
       --  Initialize BSS in SRAM
-      memset (B   => Bss,
-              C   => 0,
-              Len => Bss'Length);
+      Set (Dst => Bss,
+           To => 0);
 
       Set_Up_Heap;
       Set_Up_Clock;
@@ -162,6 +162,20 @@ package body Startup is
       --  perform elaboration and then execute the Ada main program.
       System.FreeRTOS.Tasks.Start_Scheduler;
    end Program_Initialization;
+
+   procedure Copy (Dst : out System.Storage_Elements.Storage_Array;
+                   Src :     System.Storage_Elements.Storage_Array)
+   is
+   begin
+      Dst := Src;
+   end Copy;
+
+   procedure Set (Dst : out System.Storage_Elements.Storage_Array;
+                  To  :     System.Storage_Elements.Storage_Element)
+   is
+   begin
+      Dst := (others => To);
+   end Set;
 
    --  --------------------------
    --  --  Interrupt Handlers  --

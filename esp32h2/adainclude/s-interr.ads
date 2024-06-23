@@ -1,4 +1,4 @@
---  Copyright (C) 2016 Free Software Foundation, Inc.
+--  Copyright (C) 2016-2024 Free Software Foundation, Inc.
 --
 --  This file is part of the Cortex GNAT RTS project. This file is
 --  free software; you can redistribute it and/or modify it under
@@ -26,8 +26,7 @@ package System.Interrupts is
    --  Used (via rtsfind) when Interrupt_Priority isn't specified for
    --  a PO. This can only happen if the pragma form is used.
 
-   type Interrupt_ID is range 0 .. 44;
-   --  Has to match Ada.Interrupts.Interrupt_ID.
+   type Interrupt_ID is range 0 .. 44;  -- XXX fix up for esp32-h2
 
    subtype System_Interrupt_ID is Interrupt_ID;
    --  This synonym is introduced so that the type is accessible through

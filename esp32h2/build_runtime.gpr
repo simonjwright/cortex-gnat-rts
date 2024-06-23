@@ -40,7 +40,10 @@ library project Build_Runtime is
      );
 
    for Excluded_Source_Files use
-     ("esp32_h2-rmt.ads", "stream_buffer.c");
+     ("esp32_h2-rmt.ads",
+      "s-harhan.ads",
+      "s-harhan.adb",
+      "stream_buffer.c");
 
    for Target use external ("TARGET", "riscv64-elf");
    for Runtime ("ada") use Build_Runtime'Project_Dir;

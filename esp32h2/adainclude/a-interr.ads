@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---       Copyright (C) 1992-2009, 2016, Free Software Foundation, Inc.      --
+--          Copyright (C) 1992-2024, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This specification is derived from the Ada Reference Manual for use with --
 -- GNAT. The copyright notice above, and the license provisions that follow --
@@ -36,14 +36,11 @@
 --  Modified from the GCC 4.9.1 version for the Cortex GNAT RTS
 --  project (Arduino Due RTS).
 
-with System;
+with System.Interrupts;
 
 package Ada.Interrupts is
-   pragma Pure;
 
-   --  See Atmel-11057C-ATARM-SAM3X-SAM3A-Datasheet_23-Mar-15, Table 9.1.
-   type Interrupt_ID is range 0 .. 44;
-   --  Has to match System.Interrupts.Interrupt_ID.
+   type Interrupt_ID is new System.Interrupts.Interrupt_ID;
 
    type Parameterless_Handler is access protected procedure;
 

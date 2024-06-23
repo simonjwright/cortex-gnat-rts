@@ -95,12 +95,14 @@ package body System.Interrupts is
       --  The lowest interrupt priority is 15, the highest permissible
       --  one to avoid trampling on FreeRTOS is 5 (see
       --  FreeRTOSConfig.h).
+      Dummy : Any_Priority := Prio;
    begin
       for H of Handlers loop
          declare
             Impl : constant Parameterless_Handler_Impl :=
               To_Impl_View (H.Handler);
-            Interrupt : constant Natural := Natural (H.Interrupt);
+            Interrupt : constant Natural := Natural (H.Interrupt)
+              with Unreferenced;
          begin
             if Interrupt_Handlers (H.Interrupt).Wrapper /= null then
                raise Program_Error with "interrupt already registered";
@@ -131,6 +133,7 @@ package body System.Interrupts is
       --  The IPSR is the offset in the interrupt vector, which
       --  includes all the hardware/RTOS interrupts. We only care
       --  about peripheral interrupts.
+      IPSR := 16;  -- XXXXXX
       ID := Interrupt_ID (IPSR - 16);
 
       --  Is there a handler installed?
