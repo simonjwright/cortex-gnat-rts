@@ -36,6 +36,7 @@ package body Startup is
      Export,
      Convention => Ada,
      External_Name => "program_entry",
+     Linker_Section => ".program_entry",
      No_Return;
    pragma Machine_Attribute (Program_Entry, "naked");
 
@@ -44,7 +45,7 @@ package body Startup is
       --  This is called at program entry, before the stack pointer is
       --  set up, which is why it's 'naked'. We can't call any
       --  subprograms until some assembly-level initialization has
-      --  been done, in particilar the stack pointer.
+      --  been done, in particular the stack pointer.
 
       --  See, for example, https://five-embeddev.com/baremetal/startup_c/.
 
@@ -54,8 +55,8 @@ package body Startup is
            ".option norelax;" & ASCII.LF &
            "la    gp, __global_pointer$;" & ASCII.LF &
            ".option pop;" & ASCII.LF &
-           "la    sp, _estack;" & ASCII.LF &
-           "jal   zero, _startup__program_initialization"
+           "la    sp, _end_stack;" & ASCII.LF &
+           "jal   zero, startup__program_initialization"
          ,
          --  no input, output, or clobbers
          Volatile => True);
@@ -103,45 +104,45 @@ package body Startup is
    procedure Program_Initialization is
       --  The following symbols are set up in the linker script:
       --
-      --  _sidata: the start of read/write data in Flash, to be copied
-      --           to SRAM
-      --  _sdata:  where read/write data is to be copied to
-      --  _edata:  the first address after read/write data in SRAM
-      --  _sbss:   the start of BSS (to be initialized to zero)
-      --  _ebss:   the first address after BSS.
+      --  _start_flash_data: the start of read/write data in Flash, to be
+      --           copied to SRAM
+      --  _start_sram_data:  where read/write data is to be copied to
+      --  _end_sram_data:    the first address after read/write data in SRAM
+      --  _start_bss:        the start of BSS (to be initialized to zero)
+      --  _end_bss:          the first address after BSS.
       --
       --  _isr_vector is set up in interrupt_vectors.s.
 
       use System.Storage_Elements;
 
-      --  ISR_Vector : Storage_Element
-      --    with Import, Convention => Asm, External_Name => "_isr_vector";
-      Sdata : Storage_Element
-        with Import, Convention => Asm, External_Name => "_sdata";
-      Edata : Storage_Element
-        with Import, Convention => Asm, External_Name => "_edata";
-      Sbss : Storage_Element
-        with Import, Convention => Asm, External_Name => "_sbss";
-      Ebss : Storage_Element
-        with Import, Convention => Asm, External_Name => "_ebss";
+      Start_Sram_Data : Storage_Element
+        with Import, Convention => Asm, External_Name => "_start_sram_data";
+      End_Sram_Data   : Storage_Element
+        with Import, Convention => Asm, External_Name => "_end_sram_data";
+      Start_Bss       : Storage_Element
+        with Import, Convention => Asm, External_Name => "_start_bss";
+      End_Bss         : Storage_Element
+        with Import, Convention => Asm, External_Name => "_end_bss";
 
-      Data_Size : constant Storage_Offset := Edata'Address - Sdata'Address;
+      Data_Size : constant Storage_Offset
+        := End_Sram_Data'Address - Start_Sram_Data'Address;
 
       --  Index from 1 so as to avoid subtracting 1 from the size
       subtype Data_Storage_Array is Storage_Array (1 .. Data_Size);
 
       Data_In_Flash : Data_Storage_Array
-        with Import, Convention => Asm, External_Name => "_sidata";
+        with Import, Convention => Asm, External_Name => "_start_flash_data";
 
       Data_In_Sram : Data_Storage_Array
-        with Import, Convention => Asm, External_Name => "_sdata";
+        with Import, Convention => Asm, External_Name => "_start_sram_data";
 
-      Bss_Size : constant Storage_Offset := Ebss'Address - Sbss'Address;
+      Bss_Size : constant Storage_Offset
+        := End_Bss'Address - Start_Bss'Address;
 
       subtype Bss_Storage_Array is Storage_Array (1 .. Bss_Size);
 
       Bss : Bss_Storage_Array
-        with Import, Convention => Ada, External_Name => "_sbss";
+        with Import, Convention => Ada, External_Name => "_start_bss";
 
    begin
 

@@ -123,7 +123,8 @@ library project Build_Runtime is
       for Ali_Subdir use "adalib";
       for Lib_Subdir use "adalib";
       for Required_Artifacts (".") use ("runtime.xml");
-      for Required_Artifacts ("adalib") use ("adalib/due-flash.ld");
+      for Required_Artifacts ("adalib") use ("adalib/esp32h2-flash.ld");
+      for Required_Artifacts ("adalib") use ("adalib/esp32h2-ram.ld");
       for Install_Project use "false";
    end Install;
 

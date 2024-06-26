@@ -1,7 +1,7 @@
 /* The MIT License
  *
  * Copyright (c) 2007, 2008, 2009, 2010 Dado Sutter and Bogdan Marinescu
- * Copyright (c) 2012-2021 Simon Wright <simon@pushface.org>
+ * Copyright (c) 2012-2024 Simon Wright <simon@pushface.org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -26,6 +26,9 @@
 /*
  * Originally copied from https://github.com/\
  * jsnyder/elua/blob/bikeNomad-master/src/platform/stm32f4/stm32.ld
+ *
+ * Additions from https://github.com/espressif/esp32c3-direct-boot-example/\
+ * tree/main/ld/esp32h2 for esp32-h2.
  */
 
 /* Entry Point */
@@ -43,18 +46,38 @@ EXTERN(_init)
 
 MEMORY
 {
-    flash (RX)  : ORIGIN = 0x00080000, LENGTH = 512K
-    sram (RWX)  : ORIGIN = 0x20070000, LENGTH = 96K
+    flash (RX)  : ORIGIN = 0x42000000, LENGTH = 0x400000 /* 4096K */
+    sram (RW)   : ORIGIN = 0x40800000, LENGTH = 0x40000  /* 256K */
 }
 
 SECTIONS
 {
+    /* See information on the "direct boot" feature:
+    https://github.com/espressif/esp32c3-direct-boot-example/blob/main/\
+    README.md. */
+
+/*
+    .header :
+    {
+        _rom_start = .;
+        LONG(0xaedb041d)
+        LONG(0xaedb041d)
+    } >flash
+
+    .text.entry ORIGIN(flash) + 8 :
+    {
+        KEEP(*(.program_entry))
+    } >flash
+*/
+
+    .text.entry ORIGIN(sram) :
+    {
+        KEEP(*(.program_entry))
+    } >sram
+
     .text :
     {
         . = ALIGN(4);
-        *(.isr_vector)
-        . = ALIGN(512);
-
         *(.text)
         *(.text.*)
         *(.gnu.linkonce.t.*)
@@ -67,28 +90,17 @@ SECTIONS
         KEEP(*(.fini))
         . = ALIGN(4);
         _etext = .;
-    } >flash
+    } >sram
 
     .rodata :
     {
         . = ALIGN(4);
         *(.rodata)
         *(.rodata.*)
+        *(.srodata)
+        *(.srodata.*)
         . = ALIGN(4);
-    } > flash
-
-    .ARM.extab :
-    {
-        *(.ARM.extab*)
-        *(.gnu.linkonce.armextab.*)
-    } >flash
-
-    .ARM.exidx :
-    {
-        __exidx_start = .;
-        *(.ARM.exidx*)
-        __exidx_end = .;
-    } >flash
+    } >sram
 
     .init_array :
     {
@@ -96,7 +108,7 @@ SECTIONS
         KEEP(*(SORT(.init_array.*)))
         KEEP(*(.init_array*))             /* why the final *? */
         PROVIDE(__init_array_end = .);
-    } >flash
+    } >sram
 
     .fini_array :
     {
@@ -104,43 +116,52 @@ SECTIONS
         KEEP(*(SORT(.fini_array.*)))
         KEEP(*(.fini_array*))             /* why the final *? */
         PROVIDE(__fini_array_end = .);
-    } >flash
+    } >sram
 
-    /* Where .data will actually be loaded */
-    _sidata = LOADADDR(.data);
+    /* Where .data starts in sram */
+    _start_flash_data = LOADADDR(.data);
 
-    /* Initialized data copied from flash to sram at startup */
+    /* Initialized data copied from "flash" to sram at startup */
     .data :
     {
         . = ALIGN(4);
-        _sdata = .;
-        *(.ramfunc)
-        *(.ramfunc.*)
-        *(.fastrun)
-        *(.fastrun.*)
+        _start_sram_data = .;
+        *(.sdata)
+        *(.sdata.*)
+        *(.gnu.linkonce.s.*)
         *(.data)
         *(.data.*)
         *(.gnu.linkonce.d.*)
         . = ALIGN(4);
-        _edata = .;
-    } >sram AT>flash
+        _end_sram_data = .;
+    } >sram /* AT>flash */
 
     .bss (NOLOAD) : {
 	. = ALIGN(4);
         /* This is used by the startup in order to initialize the .bss secion */
-        _sbss = .;
-        __bss_start__ = _sbss;
+        _start_bss = .;
+        *(.dynsbss)
+        *(.sbss)
+        *(.sbss.*)
+        *(.gnu.linkonce.sb.*)
+        *(.scommon)
         *(.bss)
         *(.bss.*)
         *(.gnu.linkonce.b.*)
         *(COMMON)
         . = ALIGN(4);
-        _ebss = .;
-        __bss_end__ = _ebss;
+        _end_bss = .;
     } >sram
 
-    end = .;
-    PROVIDE(_estack = ORIGIN(sram) + LENGTH(sram));
+    /* end = .; */
+
+    /* reserve 1k for interrupt stack. THIS IS NOT FINAL. */
+    PROVIDE(_end_stack = ORIGIN(sram) + LENGTH(sram) - 1K);
+
+    /* This is to do with riscv 'relax' processing */
+    /* See https://github.com/espressif/esp32c3-direct-boot-example/blob/\
+        main/ld/esp32h2/common.ld for more (inscrutable) suggestions. */
+    __global_pointer$ = _start_sram_data + 0x800;
 
     /DISCARD/ : { *(.note.GNU-stack) *(.gnu_debuglink) *(.gnu.lto_*) }
 

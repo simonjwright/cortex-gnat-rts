@@ -31,7 +31,7 @@
         ("-nostdlib", "-lm", "-lgcc", "-lc");
 
       for Required_Switches use Linker'Required_Switches &
-	("-T", "${RUNTIME_DIR(ada)}/adalib/due-flash.ld");
+	("-T", "${RUNTIME_DIR(ada)}/adalib/esp32h2-ram.ld");
    end Linker;
 
    package Binder is
