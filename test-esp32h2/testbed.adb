@@ -19,11 +19,11 @@
 --  This program has no visible functionality; the idea is to use the
 --  debugger to check that the expected effect has happened.
 
---  with Ada.Real_Time;
+with Ada.Real_Time;
 
---  with Containing;
---  pragma Unreferenced (Containing);
---  --  Ada.Containers
+with Containing;
+pragma Unreferenced (Containing);
+--  Ada.Containers
 
 --  with Dispatching;
 --  pragma Unreferenced (Dispatching);
@@ -37,9 +37,9 @@
 --  pragma Unreferenced (Images);
 --  --  'Image(), 'Img
 
---  with Interfaces.C.Strings;
---  pragma Unreferenced (Interfaces.C.Strings);
---  --  Check we can build with this package in the closure.
+with Interfaces.C.Strings;
+pragma Unreferenced (Interfaces.C.Strings);
+--  Check we can build with this package in the closure.
 
 --  with Interrupts;
 --  pragma Unreferenced (Interrupts);
@@ -53,55 +53,51 @@
 --  pragma Unreferenced (Heartbeat);
 --  --  Timing
 
---  with Last_Chance_Handler;
---  pragma Unreferenced (Last_Chance_Handler);
---  --  Check we can supply our own version, replacing libgnat's weak one.
+with Last_Chance_Handler;
+pragma Unreferenced (Last_Chance_Handler);
+--  Check we can supply our own version, replacing libgnat's weak one.
 
---  with Ada.Numerics.Elementary_Functions;
+with Ada.Numerics.Elementary_Functions;
 
 --  with SO;
 --  pragma Unreferenced (SO);
 --  --  Check suspension objects.
 
---  with Streams;
+with Streams;
 
---  with Strings;
---  pragma Unreferenced (Strings);
---  --  Secondary stack
+with Strings;
+pragma Unreferenced (Strings);
+--  Secondary stack
 
 --  --  with Watchdog_Check;
 --  --  pragma Unreferenced (Watchdog_Check);
 
 procedure Testbed is
-   --  function Use_Secondary_Stack (S : String) return String;
-   --  function Use_Secondary_Stack (S : String) return String is
-   --  begin
-   --     return S (S'First .. Positive'Min (10, S'Length) + S'First - 1);
-   --  end Use_Secondary_Stack;
+   function Use_Secondary_Stack (S : String) return String;
+   function Use_Secondary_Stack (S : String) return String is
+   begin
+      return S (S'First .. Positive'Min (10, S'Length) + S'First - 1);
+   end Use_Secondary_Stack;
 begin
 
-   loop
+   --  Check local handling of exceptions
+   declare
+      Err : exception;
+   begin
+      begin
+         raise Err;
+      end;
+   exception
+      when Err => null;
+   end;
+
+   --  Check secondary stack use
+   declare
+      S : constant String := Use_Secondary_Stack ("hello world")
+        with Unreferenced;
+   begin
       null;
-   end loop;
-
-   --  --  Check local handling of exceptions
-   --  declare
-   --     Err : exception;
-   --  begin
-   --     begin
-   --        raise Err;
-   --     end;
-   --  exception
-   --     when Err => null;
-   --  end;
-
-   --  --  Check secondary stack use
-   --  declare
-   --     S : constant String := Use_Secondary_Stack ("hello world")
-   --       with Unreferenced;
-   --  begin
-   --     null;
-   --  end;
+   end;
 
    --  declare
    --     Result : Float := 0.0 with Volatile, Unreferenced;
@@ -112,8 +108,8 @@ begin
    --     delay until Ada.Real_Time.Clock;
    --  end;
 
-   --  --  Check streams
-   --  Streams.Check (42);
+   --  Check streams
+   Streams.Check (42);
 
-   --  delay until Ada.Real_Time.Time_Last;
+   delay until Ada.Real_Time.Time_Last;
 end Testbed;

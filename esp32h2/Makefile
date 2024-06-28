@@ -21,7 +21,7 @@ SVD2ADA = ~/.alire
 all: build
 
 build: esp32h2 force
-	GNAT_FILE_NAME_CASE_SENSITIVE=1 gprbuild -p -P build_runtime.gpr
+	gprbuild -p -P build_runtime.gpr
 
 esp32h2: svd/esp32h2.svd svd2ada-stamp
 	rm -rf $@

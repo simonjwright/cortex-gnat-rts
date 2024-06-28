@@ -24,7 +24,7 @@ testbed: force
 	gprbuild -p -P testbed.gpr
 
 %.bin: %
-	esptool.py elf2image --version 2 --output $@ $<
+	esptool.py elf2image $<
 
 clean:
 	for p in $(programs); do		\
