@@ -99,14 +99,14 @@ begin
       null;
    end;
 
-   --  declare
-   --     Result : Float := 0.0 with Volatile, Unreferenced;
-   --  begin
-   --     Result := Ada.Numerics.Elementary_Functions.Sqrt (2.0);
-   --     --  need a valid statement inside the block for 'next' to get to
-   --     --  in the debugger
-   --     delay until Ada.Real_Time.Clock;
-   --  end;
+   declare
+      Result : Float := 0.0 with Volatile, Unreferenced;
+   begin
+      Result := Ada.Numerics.Elementary_Functions.Sqrt (2.0);
+      if Result not in 1.4 .. 1.5 then
+         raise Constraint_Error with "sqrt(2.0) failed, =>" & Result'Image;
+      end if;
+   end;
 
    --  Check streams
    Streams.Check (42);
