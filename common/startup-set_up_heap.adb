@@ -21,6 +21,15 @@
 --  This procedure configures the FreeRTOS implementation in heap_5.c,
 --  q.v.
 
+--  The following symbols must be exported from the linker script:
+--
+--  _start_flash_data: where rw data to be copied to sram starts in flash
+--  _start_sram_data:  where rw data is to be copied to in sram
+--  _end_sram_data:    first free location after rw data in sram
+--  _start_bss:        where to start initializing bss to zero
+--  _end_bss:          first free location after bss
+--  _end_stack:        first free location after stack
+
 with Interfaces.C;
 with System.Parameters;
 
