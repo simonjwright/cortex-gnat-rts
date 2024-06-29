@@ -31,6 +31,17 @@
  * tree/main/ld/esp32h2 for esp32-h2.
  */
 
+/*
+ * The following symbols are exported for use by the program startup code:
+ *
+ * _start_flash_data: where rw data to be copied to sram starts in flash
+ * _start_sram_data:  where rw data is to be copied to in sram
+ * _end_sram_data:    first free location after rw data in sram
+ * _start_bss:        where to start initializing bss to zero
+ * _end_bss:          first free location after bss
+ * _end_stack:        first free location after stack
+ */
+
 /* Entry Point */
 ENTRY(program_entry)
 
