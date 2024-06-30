@@ -63,9 +63,11 @@ MEMORY
 
 SECTIONS
 {
-    /* See information on the "direct boot" feature:
-    https://github.com/espressif/esp32c3-direct-boot-example/blob/main/\
-    README.md. */
+    /*
+     * See information on the "direct boot" feature:
+     * https://github.com/espressif/esp32c3-direct-boot-example/blob/main/\
+     * README.md.
+     */
 
 /*
     .header :
@@ -166,12 +168,18 @@ SECTIONS
 
     /* end = .; */
 
-    /* reserve 1k for interrupt stack. THIS IS NOT FINAL. */
-    PROVIDE(_end_stack = ORIGIN(sram) + LENGTH(sram) - 1K);
+    /* Top of stack for main and (after main finishes) interrupts. */
+    PROVIDE(__freertos_irq_stack_top =  ORIGIN(sram) + LENGTH(sram));
 
-    /* This is to do with riscv 'relax' processing */
-    /* See https://github.com/espressif/esp32c3-direct-boot-example/blob/\
-        main/ld/esp32h2/common.ld for more (inscrutable) suggestions. */
+    /* Top of stack for tasks. Reserves 1k for interrupt stack.
+     * THIS IS NOT FINAL.
+     *
+     * DO NOT define configISR_STACK_SIZE_WORDS in FreeRTOSConfig.h. */
+    PROVIDE(_end_stack = __freertos_irq_stack_top - 1K);
+
+    /* This is to do with riscv 'relax' processing.
+     * See https://github.com/espressif/esp32c3-direct-boot-example/blob/\
+     * main/ld/esp32h2/common.ld for more (inscrutable) suggestions. */
     __global_pointer$ = _start_sram_data + 0x800;
 
     /DISCARD/ : { *(.note.GNU-stack) *(.gnu_debuglink) *(.gnu.lto_*) }

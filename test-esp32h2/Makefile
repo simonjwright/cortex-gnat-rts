@@ -16,7 +16,7 @@
 #  along with this program; see the file COPYING3.  If not, see
 #  <http://www.gnu.org/licenses/>.
 
-all:: testbed testbed.bin
+all:: testbed
 
 programs = testbed
 

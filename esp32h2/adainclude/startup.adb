@@ -55,7 +55,7 @@ package body Startup is
            ".option norelax;" & ASCII.LF &
            "la    gp, __global_pointer$;" & ASCII.LF &
            ".option pop;" & ASCII.LF &
-           "la    sp, _end_stack;" & ASCII.LF &
+           "la    sp, __freertos_irq_stack_top;" & ASCII.LF &
            "jal   zero, startup__program_initialization"
          ,
          --  no input, output, or clobbers

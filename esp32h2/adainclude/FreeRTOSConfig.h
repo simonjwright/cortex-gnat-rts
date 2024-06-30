@@ -27,8 +27,6 @@ CMSIS standard names. */
 #define configMTIME_BASE_ADDRESS    ( CPU_BASE_ADDRESS + 0x1808 )
 #define configMTIMECMP_BASE_ADDRESS ( CPU_BASE_ADDRESS + 0x1810 )
 
-#define configISR_STACK_SIZE_WORDS  ( 1024 / 4 )
-
 /******************************************************************************/
 /* Hardware description related definitions. **********************************/
 /******************************************************************************/

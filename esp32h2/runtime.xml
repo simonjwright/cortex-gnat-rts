@@ -31,7 +31,13 @@
         ("-nostdlib", "-lm", "-lgcc", "-lc");
 
       for Required_Switches use Linker'Required_Switches &
-	("-T", "${RUNTIME_DIR(ada)}/adalib/esp32h2-ram.ld");
+        ("-T", "${RUNTIME_DIR(ada)}/adalib/esp32h2-ram.ld");
+
+      --  This avoids a security warning. In general, an executable
+      --  segment shouldn't be writable; but we have to load both
+      --  text and data into one segment (normally flash).
+      for Required_Switches use Linker'Required_Switches &
+	("-Wl,--no-warn-rwx-segments");
    end Linker;
 
    package Binder is
