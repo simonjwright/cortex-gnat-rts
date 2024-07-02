@@ -94,6 +94,21 @@ package body Startup is
        External_Name => "_default_initial_stack";
    pragma Weak_External (Default_Initial_Stack);
 
+   procedure Set_Up_Interrupt_Vector with Inline_Always;
+   --  For RISC-V, we have to set up 'mtvec'.
+   procedure Set_Up_Interrupt_Vector is
+   begin
+      --  The 'mtvec' register holds the address of the vector table
+      --  (the bottom 8 bits are ignored); bit 0 is the Mode bit, if
+      --  set the machine uses vectored interrupts.
+      System.Machine_Code.Asm
+        ("la t0, _isr_vector_table" & ASCII.LF &
+           "ori t0, t0, 1" & ASCII.LF &
+           "csrw mtvec, t0",
+         Clobber => "t0",
+         Volatile => True);
+   end Set_Up_Interrupt_Vector;
+
    --  Separate to reduce the complexity of this file.
    procedure Set_Up_Heap is separate;
 
@@ -111,7 +126,7 @@ package body Startup is
       --  _start_bss:        the start of BSS (to be initialized to zero)
       --  _end_bss:          the first address after BSS.
       --
-      --  _isr_vector is set up in interrupt_vectors.s.
+      --  _isr_vector_table is set up in interrupt_vectors.S.
 
       use System.Storage_Elements;
 
@@ -154,6 +169,7 @@ package body Startup is
       Set (Dst => Bss,
            To => 0);
 
+      Set_Up_Interrupt_Vector;
       Set_Up_Heap;
       Set_Up_Clock;
 

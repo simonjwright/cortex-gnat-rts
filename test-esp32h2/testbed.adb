@@ -1,4 +1,4 @@
---  Copyright (C) 2016, 2017 Free Software Foundation, Inc.
+--  Copyright (C) 2020 Free Software Foundation, Inc.
 
 --  This file is part of the Cortex GNAT RTS package.
 --
@@ -100,10 +100,10 @@ begin
    end;
 
    declare
-      Result : Float := 0.0 with Volatile, Unreferenced;
+      Result : Float := 0.0 with Volatile;
    begin
       Result := Ada.Numerics.Elementary_Functions.Sqrt (2.0);
-      if Result not in 1.4 .. 1.5 then
+      if Result not in 1.40 .. 1.42 then
          raise Constraint_Error with "sqrt(2.0) failed, =>" & Result'Image;
       end if;
    end;

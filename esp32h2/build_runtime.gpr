@@ -33,7 +33,7 @@ library project Build_Runtime is
    for Source_Dirs use Common.Paths &
      (
       "adainclude",
-      "esp32h2"
+      "esp32h2_svd"
       ,
       FreeRTOS.Source,
       FreeRTOS.Portable_Base & "RISC-V"
@@ -60,7 +60,7 @@ library project Build_Runtime is
         when "Production" =>
            COMMON_FLAGS := COMMON_FLAGS & ("-g", "-O2");
         when "Debug" =>
-           COMMON_FLAGS := COMMON_FLAGS & ("-g", "-Og");
+           COMMON_FLAGS := COMMON_FLAGS & ("-g", "-O0");
            -- -O0 is costly, e.g. in the Timer_Events task.
       end case;
       case Callgraph is

@@ -20,10 +20,10 @@ SVD2ADA = ~/.alire
 
 all: build
 
-build: esp32h2 force
+build: esp32h2_svd force
 	gprbuild -p -P build_runtime.gpr
 
-esp32h2: svd/esp32h2.svd svd2ada-stamp
+esp32h2_svd: svd/esp32h2.svd svd2ada-stamp
 	rm -rf $@
 	$(SVD2ADA)/bin/svd2ada			\
 	  --output=$@				\
@@ -41,6 +41,6 @@ install: all
 
 clean:
 	-gprclean -P build_runtime.gpr
-	rm -rf esp32h2
+	rm -rf esp32h2_svd
 
 .PHONY: all force install clean
